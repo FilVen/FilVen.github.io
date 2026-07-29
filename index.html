@@ -286,7 +286,7 @@ function PacketForm({form,f,isEdit,onSave,onCancel,handleImage,saving}){
       h("div",{style:S.formSec},
         h("div",{style:S.formSecTitle},"Dados"),
         h("div",{style:S.formRow2},
-          groupA&&h(FL,{label:"Marca de Café"},h(ComboSelect,{value:form.marcaCafe,onChange:v=>f("marcaCafe",v),options:MARCAS_CAFE,placeholder:"Selecionar marca"})),
+          (groupA||(form.subcat==="Marca de Café"&&!isSnl))&&h(FL,{label:"Marca de Café"},h(ComboSelect,{value:form.marcaCafe,onChange:v=>f("marcaCafe",v),options:MARCAS_CAFE,placeholder:"Selecionar marca"})),
           (!groupA&&!isSnl)&&h(FL,{label:"País"},h("input",{style:S.inp,value:form.pais,onChange:e=>f("pais",e.target.value),placeholder:"ex: Portugal"})),
           snlHasPais&&h(FL,{label:"País de Origem"},h("input",{style:S.inp,value:form.pais,onChange:e=>f("pais",e.target.value),placeholder:"ex: EUA, França…"})),
           (groupA&&form.subcat==="Import/Export")&&h(FL,{label:"País de Origem"},h("input",{style:S.inp,value:form.pais,onChange:e=>f("pais",e.target.value),placeholder:"ex: EUA, França…"})),
