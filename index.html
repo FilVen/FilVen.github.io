@@ -444,14 +444,28 @@ function DetailView({packet,imageFlip,setImageFlip,onEdit,onDelete,onSerieClick}
 
 
 // ── DASHBOARD ────────────────────────────────────────────────────────────────
-function DashboardView({packets}){
+function DashboardView({packets,onPacketClick}){
+  const [dashSearch,setDashSearch]=useState("");
+  const [filterTipo,setFilterTipo]=useState("");
+  const [filterSubcat,setFilterSubcat]=useState("");
+
+  const tipos=Object.keys(GRUPOS);
+  const subcats=filterTipo?subcatsFor(filterTipo):[];
+
+  const filtered=packets.filter(p=>{
+    const q=dashSearch.toLowerCase();
+    return (!filterTipo||p.tipo===filterTipo)
+      &&(!filterSubcat||p.subcat===filterSubcat)
+      &&(!q||[p.id,p.nome,p.marcaCafe||"",p.embaladora||"",p.pais||""].some(v=>(v||"").toLowerCase().includes(q)));
+  });
+
   useEffect(()=>{
-    const total=packets.length;
+    const total=filtered.length;
     if(total===0) return;
 
     // Chart 1: por Tipo (donut)
     const tipoCount={};
-    packets.forEach(p=>{ tipoCount[p.tipo]=(tipoCount[p.tipo]||0)+1; });
+    filtered.forEach(p=>{ tipoCount[p.tipo]=(tipoCount[p.tipo]||0)+1; });
     const tipoColors={"Séries":"#E65100","Individuais":"#BF360C","Adoçantes":"#6A1B9A","Comp. Aéreas":"#0D47A1","Mc Donalds":"#F57F17","Hotéis":"#1B5E20","Sweet'n Low":"#C2185B"};
     const c1=document.getElementById("chart-tipo");
     if(c1){
@@ -461,7 +475,7 @@ function DashboardView({packets}){
 
     // Chart 2: por Subcategoria (bar)
     const subCount={};
-    packets.forEach(p=>{ if(p.subcat){const k=p.tipo+" › "+p.subcat; subCount[k]=(subCount[k]||0)+1;} });
+    filtered.forEach(p=>{ if(p.subcat){const k=p.tipo+" › "+p.subcat; subCount[k]=(subCount[k]||0)+1;} });
     const sorted=Object.entries(subCount).sort((a,b)=>b[1]-a[1]).slice(0,12);
     const c2=document.getElementById("chart-sub");
     if(c2){
@@ -471,7 +485,7 @@ function DashboardView({packets}){
 
     // Chart 3: por Género (bar)
     const genCount={};
-    packets.forEach(p=>{ genCount[p.genero]=(genCount[p.genero]||0)+1; });
+    filtered.forEach(p=>{ genCount[p.genero]=(genCount[p.genero]||0)+1; });
     const genColors=["#E65100","#1565C0","#2E7D32","#6A1B9A"];
     const c3=document.getElementById("chart-genero");
     if(c3){
@@ -481,7 +495,7 @@ function DashboardView({packets}){
 
     // Chart 4: por Fecho (pie)
     const fechoCount={};
-    packets.forEach(p=>{ fechoCount[p.fecho]=(fechoCount[p.fecho]||0)+1; });
+    filtered.forEach(p=>{ fechoCount[p.fecho]=(fechoCount[p.fecho]||0)+1; });
     const fechoColors=["#0D47A1","#C62828","#2E7D32","#E65100"];
     const c4=document.getElementById("chart-fecho");
     if(c4){
@@ -489,21 +503,37 @@ function DashboardView({packets}){
       c4._chart=new Chart(c4,{type:"pie",data:{labels:Object.keys(fechoCount),datasets:[{data:Object.values(fechoCount),backgroundColor:fechoColors,borderWidth:2,borderColor:"#fff"}]},options:{responsive:true,plugins:{legend:{position:"bottom",labels:{font:{size:11},color:"#5D4037",padding:8}},title:{display:true,text:"Por Fecho",font:{size:14},color:"#3E2723",padding:{bottom:10}}}}});
     }
 
-  },[packets]);
+  },[filtered.length,dashSearch,filterTipo,filterSubcat]);
 
-  const total=packets.length;
-  const tipos=Object.keys({"Séries":1,"Individuais":1,"Adoçantes":1,"Comp. Aéreas":1,"Mc Donalds":1,"Hotéis":1,"Sweet'n Low":1});
+  const total=filtered.length;
   const tipoCount={};
-  packets.forEach(p=>{ tipoCount[p.tipo]=(tipoCount[p.tipo]||0)+1; });
-
-  if(total===0) return h("div",{style:{textAlign:"center",padding:"60px 20px",color:"#a0856e"}},
-    h("div",{style:{fontSize:48}},"📊"),
-    h("div",{style:{fontSize:18,marginTop:12}},"Sem dados ainda"),
-    h("div",{style:{fontSize:13,marginTop:6,color:"#bbb"}},"Adicione pacotes para ver os gráficos")
-  );
+  filtered.forEach(p=>{ tipoCount[p.tipo]=(tipoCount[p.tipo]||0)+1; });
 
   return h("div",null,
-    h("div",{style:{fontSize:11,letterSpacing:3,textTransform:"uppercase",color:"#8D6E63",marginBottom:16,fontWeight:600}},"Dashboard · Estatísticas"),
+    h("div",{style:{fontSize:11,letterSpacing:3,textTransform:"uppercase",color:"#8D6E63",marginBottom:12,fontWeight:600}},"Dashboard · Estatísticas"),
+
+    // Search bar
+    h("div",{style:{background:"#fff",borderRadius:12,padding:"14px 16px",boxShadow:"0 2px 8px rgba(0,0,0,.07)",marginBottom:16,display:"flex",flexWrap:"wrap",gap:10,alignItems:"center"}},
+      h("div",{style:{position:"relative",flex:"1 1 180px"}},
+        h("span",{style:{position:"absolute",left:9,top:"50%",transform:"translateY(-50%)",opacity:.5}},"🔍"),
+        h("input",{style:{...S.inp,paddingLeft:30},placeholder:"Pesquisar por nome, ID, marca, embaladora…",value:dashSearch,onChange:e=>setDashSearch(e.target.value)}),
+        dashSearch&&h("button",{style:{position:"absolute",right:8,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",cursor:"pointer",fontSize:13,color:"#999"},onClick:()=>setDashSearch("")},"✕")
+      ),
+      h("select",{style:{...S.inp,flex:"0 1 160px"},value:filterTipo,onChange:e=>{setFilterTipo(e.target.value);setFilterSubcat("");}},
+        h("option",{value:""},"Todos os tipos"),
+        tipos.map(t=>h("option",{key:t,value:t},t))
+      ),
+      subcats.length>0&&h("select",{style:{...S.inp,flex:"0 1 160px"},value:filterSubcat,onChange:e=>setFilterSubcat(e.target.value)},
+        h("option",{value:""},"Todas as subcategorias"),
+        subcats.map(s=>h("option",{key:s,value:s},s))
+      ),
+      h("div",{style:{fontSize:13,color:"#8D6E63",whiteSpace:"nowrap"}},total+" resultado"+(total!==1?"s":""))
+    ),
+
+    total===0&&h("div",{style:{textAlign:"center",padding:"40px 20px",color:"#a0856e"}},
+      h("div",{style:{fontSize:44}},"🔍"),
+      h("div",{style:{marginTop:8}},"Nenhum pacote encontrado")
+    ),
 
     // Summary cards
     h("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(130px,1fr))",gap:10,marginBottom:24}},
@@ -518,11 +548,35 @@ function DashboardView({packets}){
     ),
 
     // Charts grid
-    h("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))",gap:16}},
+    total>0&&h("div",{style:{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))",gap:16,marginBottom:24}},
       h("div",{style:{background:"#fff",borderRadius:14,padding:"16px",boxShadow:"0 2px 10px rgba(0,0,0,.07)"}},h("canvas",{id:"chart-tipo"})),
       h("div",{style:{background:"#fff",borderRadius:14,padding:"16px",boxShadow:"0 2px 10px rgba(0,0,0,.07)"}},h("canvas",{id:"chart-genero"})),
       h("div",{style:{background:"#fff",borderRadius:14,padding:"16px",boxShadow:"0 2px 10px rgba(0,0,0,.07)",gridColumn:"span 2"}},h("canvas",{id:"chart-sub"})),
       h("div",{style:{background:"#fff",borderRadius:14,padding:"16px",boxShadow:"0 2px 10px rgba(0,0,0,.07)"}},h("canvas",{id:"chart-fecho"}))
+    ),
+
+    // Results list when searching
+    (dashSearch||filterTipo||filterSubcat)&&total>0&&h("div",null,
+      h("div",{style:{fontSize:11,letterSpacing:2,textTransform:"uppercase",color:"#8D6E63",marginBottom:10,fontWeight:600}},"Resultados"),
+      h("div",{style:{display:"flex",flexDirection:"column",gap:8}},
+        filtered.map(p=>{
+          const img=p.imagemFrente||p.imagemVerso;
+          const color=SUBCAT_COLORS[p.subcat]||"#888";
+          return h("div",{key:p._fireId||p.id,style:{background:"#fff",borderRadius:10,boxShadow:"0 2px 8px rgba(0,0,0,.07)",display:"flex",alignItems:"center",gap:12,padding:"10px 14px",cursor:"pointer"},onClick:()=>onPacketClick(p)},
+            h("div",{style:{width:44,height:44,borderRadius:7,overflow:"hidden",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",background:img?"#000":"#F5F5F5"}},
+              img?h("img",{src:img,alt:"",style:{width:"100%",height:"100%",objectFit:"cover"}}):h("span",{style:{fontSize:20}},"🍬")
+            ),
+            h("div",{style:{flex:1,minWidth:0}},
+              h("div",{style:{fontSize:10,color:"#BCAAA4",fontFamily:"monospace"}},p.id),
+              h("div",{style:{fontSize:14,fontWeight:"bold",color:"#3E2723",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}},p.nome||"Sem nome"),
+              h("div",{style:{display:"flex",gap:4,flexWrap:"wrap",marginTop:2}},
+                h("span",{style:{fontSize:10,background:GRUPOS[p.tipo]?.light||"#eee",color:GRUPOS[p.tipo]?.color||"#555",borderRadius:20,padding:"1px 7px",fontWeight:600}},p.tipo),
+                p.subcat&&h("span",{style:{fontSize:10,background:"#F5F5F5",color,borderRadius:20,padding:"1px 7px",fontWeight:600}},p.subcat)
+              )
+            )
+          );
+        })
+      )
     )
   );
 }
@@ -713,7 +767,7 @@ function App(){
       const updated=packets.find(p=>p._fireId===selected._fireId);
       if(updated)setSelected(updated);
     }
-  },[packets]);
+  },[filtered.length,dashSearch,filterTipo,filterSubcat]);
 
   const listPackets=packets.filter(p=>
     p.tipo===activeTipo&&(activeSubcat===""||p.subcat===activeSubcat)&&
@@ -837,7 +891,7 @@ function App(){
     header,
     h("main",{style:S.main},
       (view==="home"&&mainView==="home")&&homeView,
-      (view==="home"&&mainView==="dashboard")&&h(DashboardView,{packets}),
+      (view==="home"&&mainView==="dashboard")&&h(DashboardView,{packets,onPacketClick:p=>{goDetail(p);}}),
       view==="subcats"&&subcatView,
       view==="list"&&listView,
       view==="detail"&&selected&&h(DetailView,{packet:selected,imageFlip,setImageFlip,onEdit:()=>openEdit(selected),onDelete:()=>deletePacket(selected._fireId),onSerieClick:(sid)=>{setSerieFiltro(sid);setView("serie");}}),
