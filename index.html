@@ -34,6 +34,9 @@ window._firebase = {
   add: (data) => addDoc(collection(db, "packets"), data),
   upd: (id, data) => updateDoc(doc(db, "packets", id), data),
   del: (id) => deleteDoc(doc(db, "packets", id)),
+  getLists: () => collection(db, "listas"),
+  addToList: (tipo, valor) => addDoc(collection(db, "listas"), {tipo, valor, ts: Date.now()}),
+  onListsSnapshot: (cb) => onSnapshot(collection(db, "listas"), cb),
   onSnapshot,
   signIn: () => signInWithPopup(auth, provider),
   signOut: () => signOut(auth),
@@ -256,7 +259,7 @@ function ImgUpload({side,img,onChange,onRemove}){
 }
 
 // ── FORM ─────────────────────────────────────────────────────────────────────
-function PacketForm({form,f,isEdit,onSave,onCancel,handleImage,saving}){
+function PacketForm({form,f,isEdit,onSave,onCancel,handleImage,saving,customEmbaladoras,customMarcas,customImpressores}){
   const subs=subcatsFor(form.tipo);
   const groupA=GRUPOS[form.tipo]?.group==="A";
   const isSnl=form.tipo==="Sweet'n Low";
@@ -289,13 +292,13 @@ function PacketForm({form,f,isEdit,onSave,onCancel,handleImage,saving}){
       h("div",{style:S.formSec},
         h("div",{style:S.formSecTitle},"Dados"),
         h("div",{style:S.formRow2},
-          (groupA||(form.subcat==="Marca de Café"&&!isSnl))&&h(FL,{label:"Marca de Café"},h(ComboSelect,{value:form.marcaCafe,onChange:v=>f("marcaCafe",v),options:MARCAS_CAFE,placeholder:"Selecionar marca"})),
+          (groupA||(form.subcat==="Marca de Café"&&!isSnl))&&h(FL,{label:"Marca de Café"},h(DynamicCombo,{value:form.marcaCafe,onChange:v=>f("marcaCafe",v),staticOptions:MARCAS_CAFE,customOptions:customMarcas,placeholder:"Selecionar marca",tipo:"marca"})),
           (!groupA&&!isSnl)&&h(FL,{label:"País"},h("input",{style:S.inp,value:form.pais,onChange:e=>f("pais",e.target.value),placeholder:"ex: Portugal"})),
           snlHasPais&&h(FL,{label:"País de Origem"},h("input",{style:S.inp,value:form.pais,onChange:e=>f("pais",e.target.value),placeholder:"ex: EUA, França…"})),
           (groupA&&form.subcat==="Import/Export")&&h(FL,{label:"País de Origem"},h("input",{style:S.inp,value:form.pais,onChange:e=>f("pais",e.target.value),placeholder:"ex: EUA, França…"})),
           (form.tipo==="Adoçantes"&&["Hotéis","Companhias Aéreas"].includes(form.subcat))&&h(FL,{label:"País"},h("input",{style:S.inp,value:form.pais,onChange:e=>f("pais",e.target.value),placeholder:"ex: Portugal, França…"})),
-          h(FL,{label:"Embaladora"},h(ComboSelect,{value:form.embaladora,onChange:v=>f("embaladora",v),options:EMBALADORAS,placeholder:"Selecionar embaladora"})),
-          h(FL,{label:"Impressor"},h("input",{style:S.inp,value:form.impressor,onChange:e=>f("impressor",e.target.value),placeholder:"ex: emba"})),
+          h(FL,{label:"Embaladora"},h(DynamicCombo,{value:form.embaladora,onChange:v=>f("embaladora",v),staticOptions:EMBALADORAS,customOptions:customEmbaladoras,placeholder:"Selecionar embaladora",tipo:"embaladora"})),
+          h(FL,{label:"Impressor"},h(DynamicCombo,{value:form.impressor,onChange:v=>f("impressor",v),staticOptions:[],customOptions:customImpressores,placeholder:"Selecionar impressor",tipo:"impressor"})),
           isSeries&&h(FL,{label:"Nº Pacotes"},h("input",{style:S.inp,value:form.nrPacotes,onChange:e=>f("nrPacotes",e.target.value),placeholder:"ex: 3"})),
           h(FL,{label:"Dimensões"},h("input",{style:S.inp,value:form.dimensoes,onChange:e=>f("dimensoes",e.target.value),placeholder:"80mm x 40mm"})),
           !isSeries&&h(FL,{label:"Peso"},h("input",{style:S.inp,value:form.peso,onChange:e=>f("peso",e.target.value),placeholder:"ex: 7/8g"}))
@@ -521,6 +524,9 @@ function App(){
   const [imageFlip,setImageFlip]=useState("frente");
   const [serieFiltro,setSerieFiltro]=useState(null);
   const [mainView,setMainView]=useState("home"); // home | dashboard
+  const [customEmbaladoras,setCustomEmbaladoras]=useState([]);
+  const [customMarcas,setCustomMarcas]=useState([]);
+  const [customImpressores,setCustomImpressores]=useState([]);
   const [user,setUser]=useState(null);
   const [authReady,setAuthReady]=useState(false);
   const nextSeq=useRef(1);
@@ -776,7 +782,7 @@ function App(){
       view==="subcats"&&subcatView,
       view==="list"&&listView,
       view==="detail"&&selected&&h(DetailView,{packet:selected,imageFlip,setImageFlip,onEdit:()=>openEdit(selected),onDelete:()=>deletePacket(selected._fireId),onSerieClick:(sid)=>{setSerieFiltro(sid);setView("serie");}}),
-      view==="form"&&h(PacketForm,{form,f:ff,isEdit:!!editId,onSave:saveForm,onCancel:()=>setView(editId?"detail":"list"),handleImage,saving}),
+      view==="form"&&h(PacketForm,{form,f:ff,isEdit:!!editId,onSave:saveForm,onCancel:()=>setView(editId?"detail":"list"),handleImage,saving,customEmbaladoras,customMarcas,customImpressores}),
       view==="serie"&&serieFiltro&&h(SerieView,{serieId:serieFiltro,packets,onPacketClick:goDetail})
     ),
     saving&&h("div",{style:S.saving},"☁️ A guardar…"),
