@@ -609,6 +609,12 @@ function App(){
             nextSeq.current=docs.length+10;
             setReady(true);
           });
+          fb.onListsSnapshot((snap)=>{
+            const all=snap.docs.map(d=>d.data());
+            setCustomEmbaladoras([...new Set(all.filter(x=>x.tipo==="embaladora").map(x=>x.valor))].sort());
+            setCustomMarcas([...new Set(all.filter(x=>x.tipo==="marca").map(x=>x.valor))].sort());
+            setCustomImpressores([...new Set(all.filter(x=>x.tipo==="impressor").map(x=>x.valor))].sort());
+          });
         } else {
           // Not logged in — show login screen
           if(loading) loading.style.display="none";
