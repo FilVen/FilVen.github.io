@@ -234,6 +234,57 @@ function ComboSelect({value,onChange,options,placeholder}){
     h("option",{value:"__outro__"},"Outra (escrever)…")
   );
 }
+
+// ── DYNAMIC COMBO ────────────────────────────────────────────────────────────
+function DynamicCombo({value,onChange,staticOptions,customOptions,placeholder,tipo}){
+  const [mode,setMode]=useState("select");
+  const [newVal,setNewVal]=useState("");
+  const [saving,setSaving]=useState(false);
+
+  const allStatic=staticOptions||[];
+  const allCustom=customOptions||[];
+  const combined=[...new Set([...allCustom])].sort();
+
+  const saveNew=async()=>{
+    const v=newVal.trim();
+    if(!v) return;
+    setSaving(true);
+    try{
+      await window._firebase.addToList(tipo,v);
+      onChange(v);
+      setNewVal("");
+      setMode("select");
+    }catch(e){ alert("Erro ao guardar: "+e.message); }
+    setSaving(false);
+  };
+
+  if(mode==="new"){
+    return h("div",{style:{display:"flex",flexDirection:"column",gap:6}},
+      h("div",{style:{display:"flex",gap:6}},
+        h("input",{style:{...S.inp,flex:1},value:newVal,onChange:e=>setNewVal(e.target.value),
+          placeholder:"Escreva o novo valor…",
+          onKeyDown:e=>e.key==="Enter"&&saveNew(),autoFocus:true}),
+        h("button",{style:{...S.cancelSmall,background:"#E8F5E9",color:"#2E7D32",border:"1px solid #A5D6A7"},
+          onClick:saveNew,disabled:saving},saving?"…":"✓"),
+        h("button",{style:S.cancelSmall,onClick:()=>{setMode("select");setNewVal("");}},"✕")
+      ),
+      h("div",{style:{fontSize:11,color:"#8D6E63",marginTop:2}},"Prima ✓ para guardar e reutilizar no futuro")
+    );
+  }
+
+  return h("select",{style:S.inp,value,onChange:e=>{
+    if(e.target.value==="__novo__") setMode("new");
+    else onChange(e.target.value);
+  }},
+    h("option",{value:""},"— "+placeholder+" —"),
+    allStatic.filter(o=>o).map(o=>h("option",{key:"s_"+o,value:o},o)),
+    combined.length>0&&h("optgroup",{key:"grp",label:"── Os meus registos ──"},
+      combined.map(o=>h("option",{key:"c_"+o,value:o},"★ "+o))
+    ),
+    h("option",{value:"__novo__"},"✚ Adicionar novo…")
+  );
+}
+
 function ImgUpload({side,img,onChange,onRemove}){
   const lbl=side==="frente"?"Frente":"Verso";
   const camRef=useRef();
