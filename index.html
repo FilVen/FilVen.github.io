@@ -277,11 +277,13 @@ function DynamicCombo({value,onChange,staticOptions,customOptions,placeholder,ti
     else onChange(e.target.value);
   }},
     h("option",{value:""},"— "+placeholder+" —"),
-    allStatic.filter(o=>o).map(o=>h("option",{key:"s_"+o,value:o},o)),
-    combined.length>0&&h("optgroup",{key:"grp",label:"── Os meus registos ──"},
-      combined.map(o=>h("option",{key:"c_"+o,value:o},"★ "+o))
+    h("option",{value:"__novo__"},"✚ Adicionar novo…"),
+    combined.length>0&&h("optgroup",{key:"grp",label:"★ Os meus registos"},
+      combined.map(o=>h("option",{key:"c_"+o,value:o},o))
     ),
-    h("option",{value:"__novo__"},"✚ Adicionar novo…")
+    allStatic.filter(o=>o).length>0&&h("optgroup",{key:"grp2",label:"── Lista completa ──"},
+      allStatic.filter(o=>o).map(o=>h("option",{key:"s_"+o,value:o},o))
+    )
   );
 }
 
