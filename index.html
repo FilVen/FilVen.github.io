@@ -355,7 +355,7 @@ function PacketForm({form,f,isEdit,onSave,onCancel,handleImage,saving,customEmba
       h("div",{style:S.formSec},
         h("div",{style:S.formSecTitle},"Dados"),
         h("div",{style:S.formRow2},
-          (groupA||(form.subcat==="Marca de Café"&&!isSnl))&&h(FL,{label:"Marca de Café"},h(DynamicCombo,{value:form.marcaCafe,onChange:v=>f("marcaCafe",v),staticOptions:MARCAS_CAFE,customOptions:customMarcas,placeholder:"Selecionar marca",tipo:"marca"})),
+          (groupA||(form.subcat==="Marca de Café"&&!isSnl)||form.subcat==="Casinos")&&h(FL,{label:"Marca de Café"},h(DynamicCombo,{value:form.marcaCafe,onChange:v=>f("marcaCafe",v),staticOptions:MARCAS_CAFE,customOptions:customMarcas,placeholder:"Selecionar marca",tipo:"marca"})),
           (!groupA&&!isSnl)&&h(FL,{label:"País"},h("input",{style:S.inp,value:form.pais,onChange:e=>f("pais",e.target.value),placeholder:"ex: Portugal"})),
           snlHasPais&&h(FL,{label:"País de Origem"},h("input",{style:S.inp,value:form.pais,onChange:e=>f("pais",e.target.value),placeholder:"ex: EUA, França…"})),
           (groupA&&form.subcat==="Import/Export")&&h(FL,{label:"País de Origem"},h("input",{style:S.inp,value:form.pais,onChange:e=>f("pais",e.target.value),placeholder:"ex: EUA, França…"})),
