@@ -476,6 +476,72 @@ function DetailView({packet,imageFlip,setImageFlip,onEdit,onDelete,onSerieClick}
 
 
 
+
+// ── COMPARE TABLE ────────────────────────────────────────────────────────────
+function CompareTable({packets,onPacketClick}){
+  const COLS=3;
+  const rows=[];
+  for(let i=0;i<packets.length;i+=COLS) rows.push(packets.slice(i,i+COLS));
+
+  const fields=[
+    ["ID","id"],["Nome","nome"],["Marca de Café","marcaCafe"],["País","pais"],
+    ["Embaladora","embaladora"],["Impressor","impressor"],["Nº Pacotes","nrPacotes"],
+    ["Dimensões","dimensoes"],["Peso","peso"],["Ano de Saída","anoSaida"],
+    ["Género","genero"],["Eixo Rotação","eixo"],["Fecho","fecho"],["Série","serieId"],["Observações","observacoes"],
+  ];
+
+  const cellStyle={border:"1px solid #E0D6D0",padding:"5px 8px",fontSize:12,color:"#4E342E",verticalAlign:"top",wordBreak:"break-word"};
+  const labelStyle={border:"1px solid #E0D6D0",padding:"5px 8px",fontSize:11,color:"#8D6E63",fontWeight:600,textAlign:"right",background:"#FFF8F5",whiteSpace:"nowrap",verticalAlign:"middle"};
+  const headerStyle={border:"1px solid #E0D6D0",padding:"6px 10px",fontSize:11,fontWeight:700,color:"#3E2723",background:"#EFEBE9",textAlign:"center"};
+
+  return h("div",{style:{overflowX:"auto"}},
+    rows.map((rowPkts,ri)=>{
+      // Find which fields have at least one non-empty value in this row
+      const activeFields=fields.filter(([,k])=>rowPkts.some(p=>p[k]));
+
+      return h("div",{key:ri,style:{marginBottom:32}},
+        h("table",{style:{width:"100%",borderCollapse:"collapse",tableLayout:"fixed",background:"#fff",boxShadow:"0 2px 12px rgba(0,0,0,.08)",borderRadius:10,overflow:"hidden"}},
+          // Images row
+          h("thead",null,
+            h("tr",null,
+              h("th",{style:{...headerStyle,width:"12%"}},""),
+              rowPkts.map(p=>{
+                const img=p.imagemFrente;
+                const imgV=p.imagemVerso;
+                return h("th",{key:p._fireId||p.id,style:{...headerStyle,width:(88/COLS)+"%",cursor:"pointer",padding:0},onClick:()=>onPacketClick(p)},
+                  h("div",{style:{display:"flex",gap:2,justifyContent:"center",padding:8}},
+                    img&&h("img",{src:img,alt:"F",style:{height:110,maxWidth:"48%",objectFit:"contain",borderRadius:4,cursor:"zoom-in"},onClick:e=>{e.stopPropagation();window.openLightbox(img);}}),
+                    imgV&&h("img",{src:imgV,alt:"V",style:{height:110,maxWidth:"48%",objectFit:"contain",borderRadius:4,cursor:"zoom-in"},onClick:e=>{e.stopPropagation();window.openLightbox(imgV);}}),
+                    !img&&!imgV&&h("div",{style:{height:80,display:"flex",alignItems:"center",justifyContent:"center",fontSize:36}},"🍬")
+                  )
+                );
+              }),
+              // Empty cells if less than COLS
+              Array.from({length:COLS-rowPkts.length}).map((_,i)=>h("th",{key:"e"+i,style:{...headerStyle}},""))
+            )
+          ),
+          h("tbody",null,
+            // Ref row
+            h("tr",null,
+              h("td",{style:labelStyle},"Refª."),
+              rowPkts.map(p=>h("td",{key:p._fireId||p.id,style:{...cellStyle,fontWeight:"bold",fontFamily:"monospace",fontSize:11,cursor:"pointer",color:GRUPOS[p.tipo]?.color||"#555"},onClick:()=>onPacketClick(p)},p.id)),
+              Array.from({length:COLS-rowPkts.length}).map((_,i)=>h("td",{key:"e"+i,style:cellStyle},""))
+            ),
+            // Data fields — only show rows with data
+            activeFields.map(([label,key])=>
+              h("tr",{key:key},
+                h("td",{style:labelStyle},label),
+                rowPkts.map(p=>h("td",{key:p._fireId||p.id,style:{...cellStyle,...(key==="observacoes"?{fontStyle:"italic",color:"#8D6E63"}:{})}},p[key]||"—")),
+                Array.from({length:COLS-rowPkts.length}).map((_,i)=>h("td",{key:"e"+i,style:cellStyle},""))
+              )
+            )
+          )
+        )
+      );
+    })
+  );
+}
+
 // ── DASHBOARD ────────────────────────────────────────────────────────────────
 function DashboardView({packets,onPacketClick}){
   const [dashSearch,setDashSearch]=useState("");
@@ -588,28 +654,10 @@ function DashboardView({packets,onPacketClick}){
       h("div",{style:{background:"#fff",borderRadius:14,padding:"16px",boxShadow:"0 2px 10px rgba(0,0,0,.07)"}},h("canvas",{id:"chart-fecho"}))
     ),
 
-    // Results list when searching
+    // Comparison table when searching
     (dashSearch||filterTipo||filterSubcat)&&total>0&&h("div",null,
-      h("div",{style:{fontSize:11,letterSpacing:2,textTransform:"uppercase",color:"#8D6E63",marginBottom:10,fontWeight:600}},"Resultados"),
-      h("div",{style:{display:"flex",flexDirection:"column",gap:8}},
-        filtered.map(p=>{
-          const img=p.imagemFrente||p.imagemVerso;
-          const color=SUBCAT_COLORS[p.subcat]||"#888";
-          return h("div",{key:p._fireId||p.id,style:{background:"#fff",borderRadius:10,boxShadow:"0 2px 8px rgba(0,0,0,.07)",display:"flex",alignItems:"center",gap:12,padding:"10px 14px",cursor:"pointer"},onClick:()=>onPacketClick(p)},
-            h("div",{style:{width:44,height:44,borderRadius:7,overflow:"hidden",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",background:img?"#000":"#F5F5F5"}},
-              img?h("img",{src:img,alt:"",style:{width:"100%",height:"100%",objectFit:"cover"}}):h("span",{style:{fontSize:20}},"🍬")
-            ),
-            h("div",{style:{flex:1,minWidth:0}},
-              h("div",{style:{fontSize:10,color:"#BCAAA4",fontFamily:"monospace"}},p.id),
-              h("div",{style:{fontSize:14,fontWeight:"bold",color:"#3E2723",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}},p.nome||"Sem nome"),
-              h("div",{style:{display:"flex",gap:4,flexWrap:"wrap",marginTop:2}},
-                h("span",{style:{fontSize:10,background:GRUPOS[p.tipo]?.light||"#eee",color:GRUPOS[p.tipo]?.color||"#555",borderRadius:20,padding:"1px 7px",fontWeight:600}},p.tipo),
-                p.subcat&&h("span",{style:{fontSize:10,background:"#F5F5F5",color,borderRadius:20,padding:"1px 7px",fontWeight:600}},p.subcat)
-              )
-            )
-          );
-        })
-      )
+      h("div",{style:{fontSize:11,letterSpacing:2,textTransform:"uppercase",color:"#8D6E63",marginBottom:12,fontWeight:600}},total+" resultado"+(total!==1?"s":"")),
+      h(CompareTable,{packets:filtered,onPacketClick})
     )
   );
 }
