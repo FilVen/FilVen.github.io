@@ -45,6 +45,23 @@ window._firebase = {
 window._firebaseReady = true;
 window.dispatchEvent(new Event("firebaseReady"));
 
+// Migration: rename Hotéis -> Hotelaria in all packets
+window._migrateHoteis = async function(){
+  const {getDocs, writeBatch, doc} = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+  const snap = await getDocs(collection(db, "packets"));
+  const batch = writeBatch(db);
+  let count = 0;
+  snap.docs.forEach(d => {
+    if(d.data().tipo === "Hotéis") {
+      batch.update(doc(db, "packets", d.id), {tipo: "Hotelaria"});
+      count++;
+    }
+  });
+  if(count > 0) await batch.commit();
+  console.log("Migrated " + count + " packets from Hotéis to Hotelaria");
+  return count;
+};
+
 // Timeout — show error if not connected after 10 seconds
 setTimeout(()=>{
   const loading=document.getElementById("loading");
