@@ -380,11 +380,12 @@ function PacketForm({form,f,isEdit,onSave,onCancel,handleImage,saving,customEmba
           h(FL,{label:"Embaladora"},h(DynamicCombo,{value:form.embaladora,onChange:v=>f("embaladora",v),staticOptions:EMBALADORAS,customOptions:customEmbaladoras,placeholder:"Selecionar embaladora",tipo:"embaladora"})),
           h(FL,{label:"Impressor"},h(DynamicCombo,{value:form.impressor,onChange:v=>f("impressor",v),staticOptions:[],customOptions:customImpressores,placeholder:"Selecionar impressor",tipo:"impressor"})),
           isSeries&&h(FL,{label:"Nº Pacotes"},h("input",{style:S.inp,value:form.nrPacotes,onChange:e=>f("nrPacotes",e.target.value),placeholder:"ex: 3"})),
-          isSeries&&h(FL,{label:"Ano de Saída"},h("select",{style:S.inp,value:form.anoSaida||"",onChange:e=>f("anoSaida",e.target.value)},
+
+          h(FL,{label:"Dimensões"},h("input",{style:S.inp,value:form.dimensoes,onChange:e=>f("dimensoes",e.target.value),placeholder:"80mm x 40mm"})),
+          h(FL,{label:"Ano de Saída"},h("select",{style:S.inp,value:form.anoSaida||"",onChange:e=>f("anoSaida",e.target.value)},
             h("option",{value:""},"— Desconhecido —"),
             ...Array.from({length:80},(_,i)=>(new Date().getFullYear()-i)).map(y=>h("option",{key:y,value:String(y)},String(y)))
           )),
-          h(FL,{label:"Dimensões"},h("input",{style:S.inp,value:form.dimensoes,onChange:e=>f("dimensoes",e.target.value),placeholder:"80mm x 40mm"})),
           !isSeries&&h(FL,{label:"Peso"},h("input",{style:S.inp,value:form.peso,onChange:e=>f("peso",e.target.value),placeholder:"ex: 7/8g"}))
         )
       ),
