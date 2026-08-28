@@ -853,7 +853,11 @@ function App(){
   const listPackets=packets.filter(p=>
     p.tipo===activeTipo&&(activeSubcat===""||p.subcat===activeSubcat)&&
     (!search||[p.id,p.nome,p.marcaCafe||""].some(v=>(v||"").toLowerCase().includes(search.toLowerCase())))
-  );
+  ).sort((a,b)=>{
+    const na=(a.nome||a.id||"").toLowerCase();
+    const nb=(b.nome||b.id||"").toLowerCase();
+    return na.localeCompare(nb,"pt");
+  });
   const totalByCat=t=>packets.filter(p=>p.tipo===t).length;
   const totalBySub=(t,s)=>packets.filter(p=>p.tipo===t&&p.subcat===s).length;
 
