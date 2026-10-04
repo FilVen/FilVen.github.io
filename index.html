@@ -973,9 +973,7 @@ function App(){
           )
         ),
         h("div",{style:S.rowRight},
-          p.dimensoes&&h("div",{style:{fontSize:10,color:"#aaa"}},p.dimensoes),
-          p.nrPacotes&&h("div",{style:{fontSize:12,color:"#8D6E63",fontWeight:600}},"×"+p.nrPacotes),
-          p.peso&&h("div",{style:{fontSize:12,color:"#8D6E63",fontWeight:600}},p.peso)
+          p.observacoes&&h("div",{style:{fontSize:10,color:"#8D6E63",fontStyle:"italic",maxWidth:120,textAlign:"right",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}},p.observacoes)
         )
       );
     }))
